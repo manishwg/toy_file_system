@@ -6,6 +6,8 @@
 #include<fcntl.h>
 #include<math.h>
 
+#include "debug.h"
+
 #define FS_SIZE (1024*1024*1024)
 #define BS 4096
 

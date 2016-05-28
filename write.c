@@ -6,8 +6,8 @@ int filewrite()
 {
     char c;
     FILE * fp;
-    int needed_block,file_size,buffcount=0;
-	unsigned int tmp_offset;
+    unsigned int needed_block,file_size,buffcount=0;
+	unsigned int tmp_offset,pos;
 
 	int file_inode_index;
 	inode *file_inode;
@@ -15,7 +15,7 @@ int filewrite()
     data_block *buff;
     buff = (data_block *) malloc(sizeof(data_block));
 
-	fp = fopen ("bigfile.txt", "r");
+	fp = fopen ("bigfile.txt", "rb");
     fseek(fp, 0, SEEK_END);
     file_size = ftell(fp);
     needed_block = ceil(file_size*1.0/(BS));
@@ -28,26 +28,34 @@ int filewrite()
     fseek(fp, 0, SEEK_SET);
 	// allocate inode
 	file_inode_index = sb_object->next_free_inode_index;
-	inode_bmap_object->inode_bmap_index[file_inode_index] = 1;
+	set_next_free_inode_index();
 	// fill data inode
 	file_inode = (inode *) &inode_table_object->inode_index[file_inode_index];
 	file_inode->file_type = 0;
 	file_inode->size = 0;
 
-	printf("(in write.c filewrite()): ***file_size %d***\n/",file_size);
 
+#ifdef DEBUG_BUILD
+	printf("in write.c: ***file_size %d***\n",file_size);
+#endif
 
-    while(c=fgetc(fp)){
-		if(buffcount == BS || c==EOF){
+    while((pos=ftell(fp))<=file_size){
+		fread(&c,sizeof(char),1,fp);
+		if(buffcount == BS || pos==file_size){
 			tmp_offset = get_next_offset_to_write(file_inode);
-			printf("(in write.c filewrite()): *** db_block_write_offset(%d): %d  size: %d ***\n", buffcount, tmp_offset,file_inode->size);
+
+#ifdef DEBUG_BUILD
+	printf("*** db_block_write_offset(%d): %d  size: %d ***\n", buffcount, tmp_offset,file_inode->size);
+			//printf("in write.c filewrite(): *** db_block_write_offset(%d): %d  size: %d ***\n", buffcount, tmp_offset,file_inode->size);
+#endif
+
 			my_write(buff,buffcount,tmp_offset);
 			set_next_free_block();
 			file_inode->size += buffcount;
 			buffcount=0;
 			write_fs();
 		}
-		if(c!=EOF){
+		if(pos!=file_size){
 			buff->data[buffcount]=c;
 			//printf("%d\n",buffcount);
 			buffcount++;
@@ -57,7 +65,6 @@ int filewrite()
 	}
 	
     free(buff);
-	set_next_free_inode_index();
     return file_inode_index;
 }
 
@@ -95,9 +102,10 @@ unsigned int get_next_offset_to_write(inode *file_inode)
 			si_index--;
 		tmp_si_offset = file_inode->single_indirect_block_offset;
 		my_read(si_block_obj,sizeof(si_block),file_inode->single_indirect_block_offset);
-		while(si_index--){
+		while(si_index > 0){
 			tmp_si_offset = si_block_obj->db_index[BS/sizeof(int *)-1] ;
 			my_read(si_block_obj,sizeof(si_block),tmp_si_offset);
+			si_index--;
 		}
 		if(!si_remblock){
 			si_block_obj->db_index[BS/sizeof(int *)-1] = sb_object->next_free_data_block_offset;
@@ -110,7 +118,10 @@ unsigned int get_next_offset_to_write(inode *file_inode)
 			return sb_object->next_free_data_block_offset;
 
 		}else{
-			//printf("**************** rem block:%d  si_index: %d si_remblock: %d \n",remain_block,si_index ,si_remblock);
+#ifdef DEBUG_BUILD
+			printf("in write.c filewrite(): *** block_no:%d  si_blobk_no %d si_db[%d] --- ",remain_block,si_index ,si_remblock);
+			//printf("in write.c filewrite(): *** db_block_write_offset(%d): %d  size: %d ***\n", buffcount, tmp_offset,file_inode->size);
+#endif
 			my_read(si_block_obj,sizeof(si_block),tmp_si_offset);
 			si_block_obj->db_index[si_remblock]=sb_object->next_free_data_block_offset;
 			my_write(si_block_obj,sizeof(si_block),tmp_si_offset);
@@ -143,18 +154,20 @@ int set_next_free_block(){
 		if(!db_bmap_object->db_bmap_index[i]){
 			sb_object->next_free_data_block_offset=sb_object->data_block_offset+i*sizeof(data_block);
 			return 1;
-		} 
+		}
 	}
 	return 0;
 }
 
 int set_next_free_inode_index(){
  	int i;
+	inode_bmap_object->inode_bmap_index[ sb_object->next_free_inode_index ] = 1;
+	sb_object->next_free_inode_index += 1;
+	sb_object->no_free_inodes -= 1;
 	for(i=0;i<(sizeof(inode_bmap));i++)
 		if(!inode_bmap_object->inode_bmap_index[i]){
 			sb_object->next_free_inode_index=i;
 			return 1;
-		} 
-
+		}
 	return 0;
 }

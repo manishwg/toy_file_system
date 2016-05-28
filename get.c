@@ -66,11 +66,14 @@ int get_inode(char *file, int i_index, int size)
 	my_read(dir_object,sizeof(*dir_object), inode_table_object->inode_index[i_index].direct_block_offset);
 	for (i = 0; i < inode_table_object->inode_index[i_index].size; i++) {
 
+#ifdef DEBUG_BUILD
 		printf("in get_inode: inode[%d]-> child[%d] = %d_:_%s_:_%s\n",i_index,i,dir_object->child[i].inode_index,dir_object->child[i].file_name,temp);
-
+#endif
 		if(strcmp(dir_object->child[i].file_name, temp) == 0){
 			if(size - old_size == 0){
+#ifdef DEBUG_BUILD
 				printf("in get_inode: ***return*** inode_index -> %d \n\n",dir_object->child[i].inode_index);
+#endif
 				return dir_object->child[i].inode_index;
 			}else
 				get_inode(&file[old_size],dir_object->child[i].inode_index, size - old_size);
@@ -81,11 +84,5 @@ int get_inode(char *file, int i_index, int size)
 
 void update()
 {
-	sb_object->next_free_inode_index += 1;
-	sb_object->no_free_inodes -= 1;
 }
 
-
-unsigned int get_child_inode( char * file_name_to_get,  int inode,  int file_type_to_get ){
-
-}

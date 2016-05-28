@@ -70,6 +70,8 @@ int init_inode_table()
 int init_root_dir()
 {
   db_bmap_object->db_bmap_index[0] = 1;
+  //sb_object->next_free_inode_index = 1;
+  sb_object->no_free_inodes -= 1;
   my_write(db_bmap_object,sizeof(*db_bmap_object),sb_object->data_block_bmap_offset);
 
   inode_bmap_object->inode_bmap_index[0] = 1;
@@ -86,7 +88,7 @@ int init_root_dir()
   strcpy(dir_object->child[0].file_name, ".");
   strcpy(dir_object->child[1].file_name, "..");
   my_write(dir_object, sizeof(*dir_object), sb_object->next_free_data_block_offset);
-	set_next_free_block();
+  set_next_free_block();
   return 0;
   
 }

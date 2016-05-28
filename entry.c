@@ -40,8 +40,9 @@ int make_entry(char *file_path)
   file_inode_index = filewrite();
   dir_inode_index = get_inode(dir_path, 0,strlen(dir_path));
   
+#ifdef DEBUG_BUILD
   printf("in make_entry: ***get path dir inode***  dir_i_index -> %d\n",dir_inode_index);
-
+#endif
   dir_inode = &inode_table_object->inode_index[dir_inode_index];
   if(dir_inode->file_type != 1){
 	  printf("E:Not a valid path. Parent is not directoty\n");
@@ -50,7 +51,9 @@ int make_entry(char *file_path)
  
   my_read(dir_object, BS, dir_inode->direct_block_offset);
   dir_object->child[dir_inode->size].inode_index = file_inode_index;
+#ifdef DEBUG_BUILD
   printf("in make_entry: ***child write*** dir_i_index[%d] -> child[%d] -> %d_:_%s\n",dir_inode_index,dir_inode->size,file_inode_index,file_name);
+#endif
   strcpy(dir_object->child[dir_inode->size].file_name, file_name);
   my_write(dir_object, sizeof(*dir_object), dir_inode->direct_block_offset);
   inode_table_object->inode_index[dir_inode_index].size +=  1;

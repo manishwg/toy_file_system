@@ -21,8 +21,7 @@ int main(int argc, char *argv[])
   inode_table_object = get_inode_table();
   initiate_file_system(fd,argv[1]);
 
-  printf("%d\n", get_inode("..",0,2));
-  update();
+  //update();
 
   //printf("%d \n",filewrite());
   make_entry(file_name);

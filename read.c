@@ -12,7 +12,7 @@ int read_file(char *filePath)
 	si_block * si_block_object ;
 	si_block_object = (si_block *) buff;
 	my_read(si_block_object, BS, file_inode->single_indirect_block_offset);
-
+#ifdef DEBUG_BUILD
 	printf("in read.c read_file: *** File_inode: %d  di_db_offset: %d  si_block_offset:%d  ***\n", file_inode_index, file_inode->direct_block_offset,file_inode->single_indirect_block_offset);
 
 	printf("\n--------------------------------------\n");
@@ -20,6 +20,7 @@ int read_file(char *filePath)
 		printf("in read.c read_file(): si_block(%d) -> db_offset[%d]:%d\n",file_inode->single_indirect_block_offset,i,si_block_object->db_index[i]);
 	}
 	printf("\n--------------------------------------\n");
+#endif
 	if(file_size < sizeof(data_block))
 		print_data_block(file_size, file_inode->direct_block_offset);
 	else
@@ -30,7 +31,7 @@ int read_file(char *filePath)
 		//file_size -= BS;
 		read_file_from_indirect_block(file_size-BS, file_inode);
 	}
-	putchar('\n');
+	//putc('\n',stdout);
 	return 0;
 }
 /* Function to read from a file from single indirect block */
@@ -56,7 +57,7 @@ int read_file_from_indirect_block(int file_size, inode * file_inode)
 		}else{
 			for(i = 0;i < remain_block ;i++ ){
 				if(file_size < BS)
-					print_len = file_size-1;
+					print_len = file_size;
 				//printf("\n------------------- si_block[%d] at (%d)----------------------------\n",i,si_block_object->db_index[i]);
 				print_data_block(print_len, si_block_object->db_index[i]);
 				file_size -= BS;
